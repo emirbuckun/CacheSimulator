@@ -36,7 +36,7 @@ public class App {
         System.out.println("Lines Per Set: " + linesPerSet);
         System.out.println("Block Bits: " + blockBits);
         System.out.println("Trace file: " + traceFile);
-      
+
         // Test cache simulator
         String testAddress = "000ebe21";
         CacheSimulator cacheSimulator = new CacheSimulator();
@@ -44,7 +44,7 @@ public class App {
         cacheSimulator.accessCache(cache, testAddress);
 
         // File operations
-        FileReader reader = new FileReader("..\\traces\\" + traceFile);
+        FileReader reader = new FileReader("traces/" + traceFile);
         int data = reader.read();
         ArrayList<String> traceLine = new ArrayList<>();
         traceLine.add("");
@@ -75,14 +75,16 @@ public class App {
                 data = reader.read();
             }
         }
+
         reader.close();
         readRam();
     }
 
     public static void readRam() throws IOException {
-        PrintWriter writer = new PrintWriter("..\\Ram.txt");
-        FileInputStream reader = new FileInputStream("..\\RAM.dat");
+        PrintWriter writer = new PrintWriter("RAM.txt");
+        FileInputStream reader = new FileInputStream("RAM.dat");
         DataInputStream in = new DataInputStream(reader);
+
         boolean eof = false;
         while (!eof) {
             try {
@@ -92,6 +94,7 @@ public class App {
                 eof = true;
             }
         }
+
         in.close();
         writer.close();
     }
