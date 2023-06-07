@@ -23,10 +23,16 @@ public class App {
             }
         }
 
-        // Now you have the parameters, you can print them to check
+        // Print arguments to check
         System.out.println("Set Index: " + setIndex);
         System.out.println("Lines Per Set: " + linesPerSet);
         System.out.println("Block Bits: " + blockBits);
         System.out.println("Trace file: " + traceFile);
+
+        // Test cache simulator
+        String testAddress = "000ebe21";
+        CacheSimulator cacheSimulator = new CacheSimulator();
+        Cache cache = new Cache(setIndex, linesPerSet, blockBits);
+        cacheSimulator.accessCache(cache, testAddress);
     }
 }
