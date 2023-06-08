@@ -49,3 +49,5 @@ nb-configuration.xml
 
 # Project
 RAM.txt
+Cache.txt
+RAM_out.dat
