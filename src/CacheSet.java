@@ -20,7 +20,7 @@ public class CacheSet {
     return maxLine;
   }
 
-  public void write(byte[] data, String tag) {
+  public void write(byte[] data, String tag, Cache cache) {
     // Increase lastUsed value in each valid line
     for (CacheLine line : lines)
       if (line.valid)
@@ -36,7 +36,13 @@ public class CacheSet {
       }
     }
 
-    // ..add scenario for full cache
+    // Eviction process, FIFO (First In First Out)
+    CacheLine oldestLine = getOldest();
+    oldestLine.valid = true;
+    oldestLine.tag = tag;
+    oldestLine.data = data;
+    oldestLine.lastUsed = 0;
+    cache.evictionCount++;
   }
 
   @Override
