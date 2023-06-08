@@ -2,15 +2,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Cache {
-  int s; // set index bits
-  int E; // number of lines per set
-  int b; // block bits
   public static List<CacheSet> sets;
 
   Cache(int s, int E, int b) {
-    this.s = s;
-    this.E = E;
-    this.b = b;
     int S = 1 << s; // number of sets
     int B = 1 << b; // block size
 
