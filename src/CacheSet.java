@@ -28,10 +28,10 @@ public class CacheSet {
 
     for (CacheLine line : lines) {
       if (!line.valid) {
-        line.lastUsed = 0;
-        line.data = data;
         line.valid = true;
         line.tag = tag;
+        line.data = data;
+        line.lastUsed = 0;
         return;
       }
     }

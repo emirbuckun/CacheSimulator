@@ -6,6 +6,7 @@ import java.util.Scanner;
 import java.nio.file.StandardOpenOption;
 
 public class App {
+    public static final StringBuilder log = new StringBuilder();
     private static int setIndex;
     private static int linesPerSet;
     private static int blockBits;
@@ -18,6 +19,7 @@ public class App {
         createCache();
         readRam();
         readTrace();
+        printOutput();
         writeRam();
         printCache();
     }
@@ -46,12 +48,13 @@ public class App {
     }
 
     private static void parseTraceLine(String line) {
+        log.append(line + "\n");
         char operation = line.charAt(0);
         String sAddress = line.substring(2, 10);
         long address = Long.parseLong(sAddress, 16) % ram.length;
 
         if (operation == 'L') { // Format: operation address, size
-            // execute load operation here
+            loadData(address);
         } else if (operation == 'M' || operation == 'S') { // Format: operation address, size, data
             String sSize = line.substring(line.indexOf(',') + 2, line.lastIndexOf(','));
             String sData = line.substring(line.lastIndexOf(',') + 2);
@@ -95,6 +98,14 @@ public class App {
             System.exit(e.hashCode());
         }
     }
+
+    private static byte[] getData(long address, int blockData) {
+        int length = cache.B; // block size
+        int start = (int) (address - blockData); // start index
+        byte[] result = new byte[length];
+        System.arraycopy(ram, start, result, 0, length);
+        return result;
+    }
     // END
 
     // ARGUMENT FUNCTIONS
@@ -135,6 +146,45 @@ public class App {
             System.out.println("Error in printCacheContents function.");
             e.printStackTrace();
             System.exit(e.hashCode());
+        }
+    }
+
+    private static void printOutput() {
+        System.out.println(
+                "\thits: " + cache.hitCount + " misses: " + cache.missCount + " evictions: " + cache.evictionCount
+                        + "\n");
+        System.out.print(log);
+    }
+
+    private static void loadData(long address) {
+        // Convert hex address to binary and split into tag, set index, and block data
+        String binaryAddress = String.format("%32s", Long.toBinaryString(address)).replace(' ', '0');
+        String sTag = binaryAddress.substring(0, binaryAddress.length() - (cache.s + cache.b));
+        String sSetIndex = binaryAddress.substring(sTag.length(), sTag.length() + cache.s);
+        String sBlockData = binaryAddress.substring(sTag.length() + cache.s);
+        int setIndex = Integer.parseInt(sSetIndex, 2);
+        int blockData = Integer.parseInt(sBlockData, 2);
+
+        // Check if the line is in the cache
+        boolean hit = false;
+        CacheSet set = cache.sets.get(setIndex);
+        for (CacheLine line : set.lines) {
+            if (line.valid && line.tag.equals(sTag)) {
+                hit = true;
+                break;
+            }
+        }
+
+        if (hit) {
+            cache.hitCount++;
+            log.append("  Hit\n");
+            log.append("  Found in cache set " + setIndex + "\n");
+        } else {
+            cache.missCount++;
+            byte[] data = getData(address, blockData);
+            set.write(data, sTag);
+            log.append("  Miss\n");
+            log.append("  Place in cache set " + setIndex + "\n");
         }
     }
     // END

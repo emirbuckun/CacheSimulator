@@ -2,12 +2,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Cache {
-  public static List<CacheSet> sets;
+  int s; // set index bits
+  int E; // number of lines per set
+  int b; // block bits
+  int S; // number of sets
+  int B; // block size
+  public List<CacheSet> sets;
+  public int hitCount = 0;
+  public int missCount = 0;
+  public int evictionCount = 0;
 
   Cache(int s, int E, int b) {
-    int S = 1 << s; // number of sets
-    int B = 1 << b; // block size
-
+    this.s = s;
+    this.E = E;
+    this.b = b;
+    this.S = 1 << s; // number of sets
+    this.B = 1 << b; // block size
     sets = new ArrayList<>(S);
     for (int i = 0; i < S; i++) {
       CacheSet set = new CacheSet(E);
