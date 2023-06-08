@@ -1,50 +1,28 @@
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.io.EOFException;
-import java.io.FileInputStream;
-import java.io.DataInputStream;
-import java.io.PrintWriter;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 
 public class App {
+    public static final StringBuilder statusTracking = new StringBuilder();
+    private static int setIndex;
+    private static int linesPerSet;
+    private static int blockBits;
+    private static String traceFileName;
+    private static byte[] ram;
+    private static Cache cache;
+
     public static void main(String[] args) throws Exception {
-        int setIndex = 0, linesPerSet = 0, blockBits = 0;
-        String traceFile = "";
-
-        for (int i = 0; i < args.length; i++) {
-            switch (args[i]) {
-                case "-s":
-                    setIndex = Integer.parseInt(args[++i]);
-                    break;
-                case "-E":
-                    linesPerSet = Integer.parseInt(args[++i]);
-                    break;
-                case "-b":
-                    blockBits = Integer.parseInt(args[++i]);
-                    break;
-                case "-t":
-                    traceFile = args[++i];
-                    break;
-                default:
-                    System.out.println("Invalid argument: " + args[i]);
-                    System.exit(1);
-            }
-        }
-
-        // Print arguments to check
-        System.out.println("Set Index: " + setIndex);
-        System.out.println("Lines Per Set: " + linesPerSet);
-        System.out.println("Block Bits: " + blockBits);
-        System.out.println("Trace file: " + traceFile);
-
-        // Test cache simulator
-        String testAddress = "000ebe21";
-        CacheSimulator cacheSimulator = new CacheSimulator();
-        Cache cache = new Cache(setIndex, linesPerSet, blockBits);
-        cacheSimulator.accessCache(cache, testAddress);
+        parseArgs(args);
+        createCache();
+        readRam();
+        writeRam();
 
         // File operations
-        FileReader reader = new FileReader("traces/" + traceFile);
+        FileReader reader = new FileReader("traces/" + traceFileName);
         int data = reader.read();
         ArrayList<String> traceLine = new ArrayList<>();
         traceLine.add("");
@@ -67,7 +45,6 @@ public class App {
                 for (int i = 0; i < traceLine.size(); i++) {
                     System.out.print(traceLine.get(i) + " ");
                 }
-
                 System.out.println();
                 traceLine.clear();
                 traceLine.add("");
@@ -75,27 +52,78 @@ public class App {
                 data = reader.read();
             }
         }
-
         reader.close();
-        readRam();
+        printCacheContent(cache);
     }
 
-    public static void readRam() throws IOException {
-        PrintWriter writer = new PrintWriter("RAM.txt");
-        FileInputStream reader = new FileInputStream("RAM.dat");
-        DataInputStream in = new DataInputStream(reader);
+    // RAM FUNCTIONS
+    private static void readRam() throws IOException {
+        Path filepath = FileSystems.getDefault().getPath("RAM.dat");
+        if (!Files.exists(filepath)) {
+            System.err.printf("File not found: %s\n", "RAM.dat");
+        }
+        try {
+            ram = Files.readAllBytes(filepath);
+        } catch (IOException e) {
+            System.err.println("Error in readRam function.");
+            e.printStackTrace();
+            System.exit(e.hashCode());
+        }
+    }
 
-        boolean eof = false;
-        while (!eof) {
-            try {
-                int data = in.readShort();
-                writer.write(Integer.toHexString(data) + " ");
-            } catch (EOFException e) {
-                eof = true;
+    private static void writeRam() {
+        Path filepath = FileSystems.getDefault().getPath("RAM_out.dat");
+        try {
+            Files.write(filepath, ram);
+        } catch (IOException e) {
+            System.out.println("Error in writeRam function.");
+            e.printStackTrace();
+            System.exit(e.hashCode());
+        }
+    }
+    // END
+
+    // ARGUMENT FUNCTIONS
+    private static void parseArgs(String[] args) {
+        for (int i = 0; i < args.length; i++) {
+            switch (args[i]) {
+                case "-s":
+                    setIndex = Integer.parseInt(args[++i]);
+                    break;
+                case "-E":
+                    linesPerSet = Integer.parseInt(args[++i]);
+                    break;
+                case "-b":
+                    blockBits = Integer.parseInt(args[++i]);
+                    break;
+                case "-t":
+                    traceFileName = args[++i];
+                    break;
+                default:
+                    System.out.println("Invalid argument: " + args[i]);
+                    System.exit(1);
             }
         }
-
-        in.close();
-        writer.close();
     }
+    // END
+
+    // CACHE FUNCTIONS
+    private static void createCache() {
+        cache = new Cache(setIndex, linesPerSet, blockBits);
+    }
+
+    private static void printCacheContent(Cache cache) {
+        try {
+            Path filePath = FileSystems.getDefault().getPath("Cache.txt");
+            Files.writeString(filePath, ""); // Clear content
+            System.out.println("Cache Content: "); // Print content
+            System.out.println(cache.toString());
+            Files.writeString(filePath, cache + "\n", StandardOpenOption.APPEND);
+        } catch (Exception e) {
+            System.out.println("Error in printCacheContents function.");
+            e.printStackTrace();
+            System.exit(e.hashCode());
+        }
+    }
+    // END
 }
