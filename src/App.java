@@ -79,9 +79,10 @@ public class App {
     	boolean eof=false;
     	while(!eof) {
     		try {
-				data=in.readShort();
+				data=in.readInt();
 //				System.out.print(Integer.toHexString(data)+" ");
-				writer.write(Integer.toHexString(data)+" ");
+//				writer.write(Integer.toHexString(data)+" ");
+				writer.write(String.format("%x", data));
 			} catch (EOFException e) {
 				eof=true;
 			}
