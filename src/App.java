@@ -6,7 +6,6 @@ import java.util.Scanner;
 import java.nio.file.StandardOpenOption;
 
 public class App {
-    public static final StringBuilder statusTracking = new StringBuilder();
     private static int setIndex;
     private static int linesPerSet;
     private static int blockBits;
@@ -18,23 +17,23 @@ public class App {
         parseArgs(args);
         createCache();
         readRam();
-        readTrace(traceFileName);
+        readTrace();
         writeRam();
         printCache();
     }
 
     // TRACE FILE FUNCTIONS
-    private static void readTrace(String fileName) {
-        Path filePath = FileSystems.getDefault().getPath(fileName);
+    private static void readTrace() {
+        Path filePath = FileSystems.getDefault().getPath(traceFileName);
 
         if (!Files.exists(filePath))
-            System.err.printf("File not found: %s\n", fileName);
+            System.err.printf("File not found: %s\n", traceFileName);
 
         Scanner traceReader = null;
         try {
             traceReader = new Scanner(filePath);
         } catch (IOException e) {
-            System.err.printf("IO error while reading trace file %s\n", fileName);
+            System.err.printf("IO error while reading trace file %s\n", traceFileName);
             e.printStackTrace();
             System.exit(e.hashCode());
         }
@@ -47,16 +46,9 @@ public class App {
     }
 
     private static void parseTraceLine(String line) {
-        statusTracking.append(line).append("\n");
         char operation = line.charAt(0);
         String sAddress = line.substring(2, 10);
         long address = Long.parseLong(sAddress, 16) % ram.length;
-
-        // Test
-        System.out.println("parseTraceLine: \n");
-        System.out.println("operation: " + operation + "\n");
-        System.out.println("sAddress: " + sAddress + "\n");
-        System.out.println("address: " + address + "\n");
 
         if (operation == 'L') { // Format: operation address, size
             // execute load operation here
@@ -65,12 +57,6 @@ public class App {
             String sData = line.substring(line.lastIndexOf(',') + 2);
             int size = Integer.parseInt(sSize);
             byte[] data = new byte[sData.length() / 2];
-
-            // Test
-            System.out.println("else if block: \n");
-            System.out.println("sSize: " + sSize + "\n");
-            System.out.println("sData: " + sData + "\n");
-            System.out.println("size: " + size + "\n");
 
             for (int i = 0; i < data.length; i++) {
                 data[i] = (byte) Integer.parseInt(sData.substring(i * 2, (i * 2) + 2), 16);
@@ -144,9 +130,7 @@ public class App {
         try {
             Path filePath = FileSystems.getDefault().getPath("Cache.txt");
             Files.writeString(filePath, ""); // Clear content
-            System.out.println("Cache Content: "); // Print content
-            System.out.println(cache.toString());
-            Files.writeString(filePath, cache + "\n", StandardOpenOption.APPEND);
+            Files.writeString(filePath, cache + "\n", StandardOpenOption.APPEND); // Print content
         } catch (Exception e) {
             System.out.println("Error in printCacheContents function.");
             e.printStackTrace();
