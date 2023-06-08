@@ -22,7 +22,7 @@ public class App {
         printCache();
     }
 
-    // TRACE FILE FUNCTIONS
+    // TRACE FUNCTIONS
     private static void readTrace() {
         Path filePath = FileSystems.getDefault().getPath(traceFileName);
 
