@@ -1,9 +1,8 @@
-import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Scanner;
 import java.nio.file.StandardOpenOption;
 
 public class App {
@@ -19,42 +18,71 @@ public class App {
         parseArgs(args);
         createCache();
         readRam();
+        readTrace(traceFileName);
         writeRam();
-
-        // File operations
-        FileReader reader = new FileReader("traces/" + traceFileName);
-        int data = reader.read();
-        ArrayList<String> traceLine = new ArrayList<>();
-        traceLine.add("");
-        int traceTemp = 0;
-
-        // We read one line at a time
-        // Only saving one line in the same array at a time
-        // Access the line elements in the else block.
-        while (data != -1) {
-            if (data == ' ') {
-                traceTemp++;
-                data = reader.read();
-                traceLine.add("");
-            } else if (data == ',') {
-                data = reader.read();
-            } else if (Character.isAlphabetic(data) || Character.isDigit(data)) {
-                traceLine.set(traceTemp, traceLine.get(traceTemp).concat("" + (char) data));
-                data = reader.read();
-            } else {
-                for (int i = 0; i < traceLine.size(); i++) {
-                    System.out.print(traceLine.get(i) + " ");
-                }
-                System.out.println();
-                traceLine.clear();
-                traceLine.add("");
-                traceTemp = 0;
-                data = reader.read();
-            }
-        }
-        reader.close();
-        printCacheContent(cache);
+        printCache();
     }
+
+    // TRACE FILE FUNCTIONS
+    private static void readTrace(String fileName) {
+        Path filePath = FileSystems.getDefault().getPath(fileName);
+
+        if (!Files.exists(filePath))
+            System.err.printf("File not found: %s\n", fileName);
+
+        Scanner traceReader = null;
+        try {
+            traceReader = new Scanner(filePath);
+        } catch (IOException e) {
+            System.err.printf("IO error while reading trace file %s\n", fileName);
+            e.printStackTrace();
+            System.exit(e.hashCode());
+        }
+
+        while (traceReader.hasNextLine()) {
+            String line = traceReader.nextLine();
+            parseTraceLine(line);
+        }
+        traceReader.close();
+    }
+
+    private static void parseTraceLine(String line) {
+        statusTracking.append(line).append("\n");
+        char operation = line.charAt(0);
+        String sAddress = line.substring(2, 10);
+        long address = Long.parseLong(sAddress, 16) % ram.length;
+
+        // Test
+        System.out.println("parseTraceLine: \n");
+        System.out.println("operation: " + operation + "\n");
+        System.out.println("sAddress: " + sAddress + "\n");
+        System.out.println("address: " + address + "\n");
+
+        if (operation == 'L') { // Format: operation address, size
+            // execute load operation here
+        } else if (operation == 'M' || operation == 'S') { // Format: operation address, size, data
+            String sSize = line.substring(line.indexOf(',') + 2, line.lastIndexOf(','));
+            String sData = line.substring(line.lastIndexOf(',') + 2);
+            int size = Integer.parseInt(sSize);
+            byte[] data = new byte[sData.length() / 2];
+
+            // Test
+            System.out.println("else if block: \n");
+            System.out.println("sSize: " + sSize + "\n");
+            System.out.println("sData: " + sData + "\n");
+            System.out.println("size: " + size + "\n");
+
+            for (int i = 0; i < data.length; i++) {
+                data[i] = (byte) Integer.parseInt(sData.substring(i * 2, (i * 2) + 2), 16);
+            }
+
+            // execute modify or store operation here
+        } else {
+            System.err.printf("Invalid operation found in trace:\n%s", line);
+            System.exit(-1);
+        }
+    }
+    // END
 
     // RAM FUNCTIONS
     private static void readRam() throws IOException {
@@ -97,7 +125,7 @@ public class App {
                     blockBits = Integer.parseInt(args[++i]);
                     break;
                 case "-t":
-                    traceFileName = args[++i];
+                    traceFileName = "traces/" + args[++i];
                     break;
                 default:
                     System.out.println("Invalid argument: " + args[i]);
@@ -112,7 +140,7 @@ public class App {
         cache = new Cache(setIndex, linesPerSet, blockBits);
     }
 
-    private static void printCacheContent(Cache cache) {
+    private static void printCache() {
         try {
             Path filePath = FileSystems.getDefault().getPath("Cache.txt");
             Files.writeString(filePath, ""); // Clear content
