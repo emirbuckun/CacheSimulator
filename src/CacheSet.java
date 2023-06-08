@@ -4,12 +4,12 @@ import java.util.List;
 public class CacheSet {
   public final List<CacheLine> lines;
 
-  public CacheSet(int initialCapacity) {
-    this.lines = new ArrayList<>(initialCapacity);
+  public CacheSet(int associativity) {
+    this.lines = new ArrayList<>(associativity);
   }
 
   private CacheLine getOldest() {
-    int max = Integer.MIN_VALUE;
+    int max = 0;
     CacheLine maxLine = null;
     for (CacheLine line : lines) {
       if (line.lastUsed > max) {
