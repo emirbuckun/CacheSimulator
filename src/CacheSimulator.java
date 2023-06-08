@@ -13,12 +13,12 @@ public class CacheSimulator {
 
     // Check if the line is in the cache
     boolean hit = false;
-    for (CacheLine line : cache.cache[setIndex]) {
-      if (line.valid && line.tag.equals(tag)) {
-        hit = true;
-        break;
-      }
-    }
+    // for (CacheLine line : cache.cache[setIndex]) {
+    // if (line.valid && line.tag.equals(tag)) {
+    // hit = true;
+    // break;
+    // }
+    // }
 
     if (hit) {
       // ... (increment hit count)
