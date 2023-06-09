@@ -19,9 +19,9 @@ public class App {
         createCache();
         readRam();
         readTrace();
-        printOutput();
         writeRam();
         printCache();
+        printOutput();
     }
 
     // TRACE FUNCTIONS
@@ -52,13 +52,13 @@ public class App {
         char operation = line.charAt(0);
         String sAddress = line.substring(2, 10);
         long address = Long.parseLong(sAddress, 16) % ram.length;
+        // String sSize = line.substring(line.indexOf(',') + 2, line.lastIndexOf(','));
+        // int size = Integer.parseInt(sSize);
 
         if (operation == 'L') { // Format: operation address, size
             loadData(address);
         } else if (operation == 'M' || operation == 'S') { // Format: operation address, size, data
-            String sSize = line.substring(line.indexOf(',') + 2, line.lastIndexOf(','));
             String sData = line.substring(line.lastIndexOf(',') + 2);
-            int size = Integer.parseInt(sSize);
             byte[] data = new byte[sData.length() / 2];
 
             for (int i = 0; i < data.length; i++) {
@@ -182,7 +182,7 @@ public class App {
         } else {
             cache.missCount++;
             byte[] data = getData(address, blockData);
-            set.write(data, sTag);
+            set.write(data, sTag, cache);
             log.append("  Miss\n");
             log.append("  Place in cache set " + setIndex + "\n");
         }
