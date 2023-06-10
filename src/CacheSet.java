@@ -8,7 +8,7 @@ public class CacheSet {
     this.lines = new ArrayList<>(associativity);
   }
 
-  private CacheLine getOldest() {
+  public CacheLine getOldest() {
     int max = 0;
     CacheLine maxLine = null;
     for (CacheLine line : lines) {
@@ -21,7 +21,7 @@ public class CacheSet {
   }
 
   public void write(byte[] data, String tag, Cache cache) {
-    // Increase lastUsed value in each valid line
+    // increment lastUsed value in each line
     for (CacheLine line : lines)
       if (line.valid)
         line.lastUsed++;
@@ -36,7 +36,7 @@ public class CacheSet {
       }
     }
 
-    // Eviction process, FIFO (First In First Out)
+    // eviction process
     CacheLine oldestLine = getOldest();
     oldestLine.valid = true;
     oldestLine.tag = tag;
