@@ -21,9 +21,9 @@ public class CacheLine {
   @Override
   public String toString() {
     return "\n\t\tCache Line: " +
-        "valid = " + valid +
         ", tag = " + (tag == "" ? "null" : tag) +
-        ", lastUsed = " + lastUsed +
+        ", time = " + lastUsed +
+        "valid = " + valid +
         ", data = " + byteArrayToHex(data);
   }
 }

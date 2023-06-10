@@ -1,3 +1,9 @@
+/*
+ * Emir Büçkün - 150119024
+ * Cihan Erdoğanyılmaz - 130319659
+ * Cem Batuhan Bohan - 150122509
+ */
+
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -56,8 +62,8 @@ public class App {
         // int size = Integer.parseInt(sSize);
 
         if (operation == 'L') { // Format: operation address, size
-            loadData(address);
-        } else if (operation == 'M' || operation == 'S') { // Format: operation address, size, data
+            loadData(address - (address % 8));
+        } else if (operation == 'S') { // Format: operation address, size, data
             String sData = line.substring(line.lastIndexOf(',') + 2);
             byte[] data = new byte[sData.length() / 2];
 
@@ -66,6 +72,16 @@ public class App {
             }
 
             // execute modify or store operation here
+        } else if (operation == 'M') { // Format: operation address, size, data
+            String sData = line.substring(line.lastIndexOf(',') + 2);
+            byte[] data = new byte[sData.length() / 2];
+
+            for (int i = 0; i < data.length; i++) {
+                data[i] = (byte) Integer.parseInt(sData.substring(i * 2, (i * 2) + 2), 16);
+            }
+
+            loadData(address);
+            storeData(address, data);
         } else {
             System.err.printf("Invalid operation found in trace:\n%s", line);
             System.exit(-1);
@@ -143,17 +159,55 @@ public class App {
             Files.writeString(filePath, ""); // Clear content
             Files.writeString(filePath, cache + "\n", StandardOpenOption.APPEND); // Print content
         } catch (Exception e) {
-            System.out.println("Error in printCacheContents function.");
+            System.out.println("Error in printCache function.");
             e.printStackTrace();
             System.exit(e.hashCode());
         }
     }
 
+    private static void storeData(long address, byte[] data) {
+        // Convert hex address to binary and split into tag and set index
+        String binaryAddress = String.format("%32s", Long.toBinaryString(address)).replace(' ', '0');
+        String sTag = binaryAddress.substring(0, binaryAddress.length() - (cache.s + cache.b));
+        String sSetIndex = binaryAddress.substring(sTag.length(), sTag.length() + cache.s);
+        int setIndex = Integer.parseInt(sSetIndex, 2);
+
+        CacheSet set = cache.sets.get(setIndex);
+        boolean hit = false;
+        for (CacheLine line : set.lines) {
+            if (line.valid && line.tag.equals(sTag)) {
+                hit = true;
+                line.data = data;
+                break;
+            }
+        }
+
+        if (!hit) {
+            cache.missCount++;
+            // Eviction process, FIFO (First In First Out)
+            CacheLine oldestLine = set.getOldest();
+            if (oldestLine.valid) {
+                cache.evictionCount++;
+            }
+            oldestLine.valid = true;
+            oldestLine.tag = sTag;
+            oldestLine.data = data;
+        }
+    }
+
     private static void printOutput() {
-        System.out.println(
-                "\thits: " + cache.hitCount + " misses: " + cache.missCount + " evictions: " + cache.evictionCount
-                        + "\n");
-        System.out.print(log);
+        try {
+            Path filePath = FileSystems.getDefault().getPath("output.txt");
+            Files.writeString(filePath, ""); // Clear content
+            Files.writeString(filePath,
+                    "\thits: " + cache.hitCount + " misses: " + cache.missCount + " evictions: " + cache.evictionCount
+                            + "\n" + log + "\n",
+                    StandardOpenOption.APPEND); // Print content
+        } catch (Exception e) {
+            System.out.println("Error in printOutput function.");
+            e.printStackTrace();
+            System.exit(e.hashCode());
+        }
     }
 
     private static void loadData(long address) {
@@ -162,7 +216,12 @@ public class App {
         String sTag = binaryAddress.substring(0, binaryAddress.length() - (cache.s + cache.b));
         String sSetIndex = binaryAddress.substring(sTag.length(), sTag.length() + cache.s);
         String sBlockData = binaryAddress.substring(sTag.length() + cache.s);
-        int setIndex = Integer.parseInt(sSetIndex, 2);
+        int setIndex;
+        try {
+            setIndex = Integer.parseInt(sSetIndex, 2);
+        } catch (NumberFormatException e) {
+            setIndex = 0;
+        }
         int blockData = Integer.parseInt(sBlockData, 2);
 
         // Check if the line is in the cache
@@ -188,4 +247,48 @@ public class App {
         }
     }
     // END
+
+    public static void storeData(long address) {
+        // Convert hex address to binary and split into tag, set index, and block data
+        String binaryAddress = String.format("%32s", Long.toBinaryString(address)).replace(' ', '0');
+        String sTag = binaryAddress.substring(0, binaryAddress.length() - (cache.s + cache.b));
+        String sSetIndex = binaryAddress.substring(sTag.length(), sTag.length() + cache.s);
+        int setIndex = Integer.parseInt(sSetIndex, 2);
+
+        // Check if the line is in the cache
+        boolean hit = false;
+        CacheSet set = cache.sets.get(setIndex);
+        for (CacheLine line : set.lines) {
+            if (line.valid && line.tag.equals(sTag)) {
+                hit = true;
+                break;
+            }
+        }
+
+        if (hit) {
+            // Write through to memory
+            writeToMemory(address);
+            cache.hitCount++;
+            log.append("  Hit\n");
+            log.append("  Found in cache set " + setIndex + "\n");
+        } else {
+            // No write allocate
+            writeToMemory(address);
+            cache.missCount++;
+            log.append("  Miss\n");
+            log.append("  Place in cache set " + setIndex + "\n");
+        }
+    }
+
+    private static void writeToMemory(long address) {
+        // Convert hex address to binary and split into block data
+        String binaryAddress = String.format("%32s", Long.toBinaryString(address)).replace(' ', '0');
+        String sBlockData = binaryAddress.substring(binaryAddress.length() - cache.b);
+        int blockData = Integer.parseInt(sBlockData, 2);
+
+        // Update the corresponding block in the 'ram' byte array
+        int start = (int) (address - blockData); // start index
+        byte[] data = cache.sets.get(0).lines.get(0).data; // assuming all cache lines have the same block size
+        System.arraycopy(data, 0, ram, start, data.length);
+    }
 }

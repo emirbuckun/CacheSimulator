@@ -16,7 +16,7 @@ public class Cache {
     this.s = s;
     this.E = E;
     this.b = b;
-    this.S = 1 << s; // number of sets
+    this.S = (s == 0) ? 1 : (1 << s); // number of sets
     this.B = 1 << b; // block size
     sets = new ArrayList<>(S);
     for (int i = 0; i < S; i++) {
